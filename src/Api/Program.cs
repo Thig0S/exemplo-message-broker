@@ -4,6 +4,25 @@ using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("RabbitMq") ??
+    throw new InvalidOperationException("A connection string RabbitMq nao foi configurada");
+
+builder.Services.AddMassTransit(config =>
+{
+    //use o rabbitMq para o transporte de mensagens
+    config.UsingRabbitMq((context, rabbitMq) =>
+    {
+        rabbitMq.Host(new Uri(connectionString));
+
+        rabbitMq.ReceiveEndpoint("pedidos-criados", endpoint =>
+        {
+            // Apenas uma mensagem seja entrege e processada por vez
+            endpoint.PrefetchCount = 1;
+            endpoint.ConcurrentMessageLimit = 1;
+        });
+    });
+});
+
 //Impede que o produtor do MassTransit inicie antes que os endpoints estejam disponiveis
 builder.Services.Configure<MassTransitHostOptions>(options =>
 {

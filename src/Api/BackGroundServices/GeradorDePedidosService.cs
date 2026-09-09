@@ -1,9 +1,12 @@
 using System.Security.Cryptography;
 using ExemploMessageBroker.WebApi.Contracts;
+using MassTransit;
 
 namespace ExemploMessageBroker.WebApi.BackGroundServices;
 
-public class GeradorDePedidosService(ILogger<GeradorDePedidosService> logger) : BackgroundService
+public class GeradorDePedidosService(ILogger<GeradorDePedidosService> logger,
+    IBus bus //message bus
+) : BackgroundService
 {
     private static readonly TimeSpan IntervaloGeracao = TimeSpan.FromSeconds(5);
     private static readonly string[] Clientes =
@@ -27,6 +30,8 @@ public class GeradorDePedidosService(ILogger<GeradorDePedidosService> logger) : 
             while (!stoppingToken.IsCancellationRequested)
             {
                 var pedido = CriarPedido();
+
+                await bus.Publish(pedido, stoppingToken);
 
                 logger.LogInformation(
                     "Publicaco pedido {pedido.PedidoId} para {Cliente}. Restaurante: {Restaurante}; Itens: {QuantidadeItens}; Total: {ValorTotal}",
