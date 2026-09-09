@@ -1,5 +1,6 @@
 
 using ExemploMessageBroker.WebApi.BackGroundServices;
+using ExemploMessageBroker.WebApi.Consumers;
 using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,9 @@ var connectionString = builder.Configuration.GetConnectionString("RabbitMq") ??
 
 builder.Services.AddMassTransit(config =>
 {
+    //add o consumer
+    config.AddConsumer<PedidoCriadoConsumer>();
+
     //use o rabbitMq para o transporte de mensagens
     config.UsingRabbitMq((context, rabbitMq) =>
     {
@@ -19,6 +23,8 @@ builder.Services.AddMassTransit(config =>
             // Apenas uma mensagem seja entrege e processada por vez
             endpoint.PrefetchCount = 1;
             endpoint.ConcurrentMessageLimit = 1;
+
+            endpoint.ConfigureConsumer<PedidoCriadoConsumer>(context);
         });
     });
 });
